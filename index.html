@@ -143,6 +143,16 @@
 
 
 
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?fa4e3c6f3b8d32a95de40c1781bed9f5";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
 
 
 
@@ -206,6 +216,16 @@
         </li>
       
         
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
         <li class="menu-item menu-item-archives">
           <a href="/archives" rel="section">
             
@@ -254,12 +274,12 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/22/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/05/23/深度学习在文本分类中的应用/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Wang Henghuan">
       <meta itemprop="description" content="">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/me.png">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -273,7 +293,7 @@
         
           <h1 class="post-title" itemprop="name headline">
                 
-                <a class="post-title-link" href="/2017/05/22/hello-world/" itemprop="url">Hello World</a></h1>
+                <a class="post-title-link" href="/2017/05/23/深度学习在文本分类中的应用/" itemprop="url">深度学习在文本分类中的应用</a></h1>
         
 
         <div class="post-meta">
@@ -285,8 +305,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-22T23:30:37+08:00">
-                2017-05-22
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-23T00:58:58+08:00">
+                2017-05-23
               </time>
             
 
@@ -295,6 +315,28 @@
             
           </span>
 
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习与智能/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习与智能</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
           
 
           
@@ -322,15 +364,21 @@
       
         
           
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
+            <h4 id="仅使用CNN的结构"><a href="#仅使用CNN的结构" class="headerlink" title="仅使用CNN的结构"></a>仅使用CNN的结构</h4><img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-文本分类.png" alt="-cnn-文本分类.png" title="">
+<ul>
+<li>相比于传统CNN,在解决nlp问题时,每个filter的宽都等于每个单词的宽度.</li>
+<li>输入数据有两个channel,其中一个是静态的embedding,另一个是动态的embedding.静态embedding是事先训练好的,在此次训练中不再变化;动态embedding会在训练过程中也进行参数求解.</li>
+<li>仅使用静态embedding的话可能因为embedding训练数据集与实际数据集有偏差而导致不准确;仅用动态数据集的话其初始化会对训练有影响.</li>
+</ul>
+<h4 id="CNN与RNN混合使用"><a href="#CNN与RNN混合使用" class="headerlink" title="CNN与RNN混合使用"></a>CNN与RNN混合使用</h4><h5 id="首先分别看CNN与RNN获取文本向量的方法"><a href="#首先分别看CNN与RNN获取文本向量的方法" class="headerlink" title="首先分别看CNN与RNN获取文本向量的方法:"></a>首先分别看CNN与RNN获取文本向量的方法:</h5><img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-rnn-文本分类.png" alt="-cnn-rnn-文本分类.png" title="">
+<img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-rnn-文本分类2.png" alt="-cnn-rnn-文本分类2.png" title="">
+<h5 id="然后看CNN与RNN混合使用的方法"><a href="#然后看CNN与RNN混合使用的方法" class="headerlink" title="然后看CNN与RNN混合使用的方法:"></a>然后看CNN与RNN混合使用的方法:</h5>
+<ul>
+<li>简单来说,第一步使用CNN将句子各个局部进行计算得到n个向量(n是filter数目),这些向量每个元素之间的顺序正好与输入句子中单词的顺序对应.</li>
+<li>之后把各个向量同一时间的元素取出来组成新向量,这样每个向量内部各个元素都对应同一时间点的单词,而向量之间对应句子中单词的顺序关系;</li>
+<li>此时把新组建的向量当做输入向量序列,放入LSTM中进行训练.</li>
+</ul>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a href="https://app.yinxiang.com/shard/s5/nl/416164/a419d8fc-79e6-4566-851f-b66a0dc86b35?title=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%9C%A8%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8%20-%20luchi007%E7%9A%84%E4%B8%93%E6%A0%8F%20-%20%E5%8D%9A%E5%AE%A2%E9%A2%91%E9%81%93%20-%20CSDN.NET" target="_blank" rel="external">深度学习在文本分类中的应用-博客</a></p>
 
           
         
@@ -398,7 +446,7 @@
       <section class="site-overview sidebar-panel sidebar-panel-active">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
-               src="/images/avatar.gif"
+               src="/images/me.png"
                alt="Wang Henghuan" />
           <p class="site-author-name" itemprop="name">Wang Henghuan</p>
            
@@ -417,7 +465,25 @@
           
 
           
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
 
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
           
 
         </nav>
@@ -602,6 +668,21 @@
   
 
   
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
 
   
 
