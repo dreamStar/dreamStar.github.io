@@ -308,6 +308,145 @@
   
 
   <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/06/04/词向量-词嵌入-学习笔记/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Wang Henghuan">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/me.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="回音壁">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/06/04/词向量-词嵌入-学习笔记/" itemprop="url">词向量(词嵌入)学习笔记</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-06-04T23:43:11+08:00">
+                2017-06-04
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/深度学习与智能/" itemprop="url" rel="index">
+                    <span itemprop="name">深度学习与智能</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <p>简单来说，词嵌入就是把一个词表示成一个（稠密）向量。词转向量的自然方式是使用one-hot形式，但是这种形式的问题在于每个词向量尺寸很大，极其稀疏；同时两个词之间的关系完全无法捕捉。使用词嵌入（word embedding）之后，相近的词在特征空间上的距离就更近。</p>
+<p>one-hot转词嵌入需要一个词嵌入字典，将词的one-hot向量乘以这个字典就得到了词嵌入向量（所以这里或许可以优化？）。可以看到这相当于是计算了一层隐藏层的activation。词嵌入字典的得到是一个训练任务的”副产品“，词嵌入字典就相当于是网络结构中的一层隐藏层的权值。</p>
+<p>词嵌入的做法有很多，不过google的word2vec是当前最流行的，tensorflow中有相关教程。其算法简单来说，就是在输入的连续句子语料中，以一个窗口截取每段话，将这段话中间的词替换为若干个其他词，让网络估计中间的词是原词的概率是多少，是其他词（噪音）的概率是多少，要求前者尽可能低，后者尽可能高。比如</p>
+<p>the quick brown fox jumped over the lazy dog</p>
+<p>这段话，使用尺寸为1的窗口，那么就会成为如下的样本集：<br>([the, brown], quick), ([quick, fox], brown), ([brown, jumped], fox), …<br>词嵌入模型可以正向来（从context猜target），也可以反向来（从target猜context）。skip-gram模型就是反向来（好处是？），于是数据集变成了：<br>(quick, the), (quick, brown), (brown, quick), (brown, fox), …<br>然后便可以进行计算。计算时对于每个样本，要随机采样若干个噪音样本，计算网络对于正确词和噪音词的概率预测，然后使用noise-contrastive estimation (NCE)损失函数（就是把所有结果的交叉熵代价函数相加）作为代价函数，进行训练，最后取出字典。</p>
+<p> 在实际使用中,词嵌入可能不仅仅用于nlp.在推荐等场合,”词”嵌入的第一维可能非常大,以致于在单机中无法存放.所幸的是我们在计算中不需要用到全部词向量,因此,可以把embedding字典分布式存储起来,仅在计算时取对应的向量,计算完成后将梯度信息再送回分布式服务器进行更新.</p>
+
+          
+        
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <div>
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/06/04/tensorflow-Word2Vec教程代码解读/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -662,7 +801,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives">
-                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-count">3</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
