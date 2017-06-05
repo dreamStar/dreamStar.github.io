@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>回音壁</title>
+  <subtitle>念念不忘,必有回响</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="http://yoursite.com/"/>
+  <updated>2017-06-04T15:44:50.926Z</updated>
+  <id>http://yoursite.com/</id>
+  
+  <author>
+    <name>Wang Henghuan</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>词向量(词嵌入)学习笔记</title>
+    <link href="http://yoursite.com/2017/06/04/%E8%AF%8D%E5%90%91%E9%87%8F-%E8%AF%8D%E5%B5%8C%E5%85%A5-%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/"/>
+    <id>http://yoursite.com/2017/06/04/词向量-词嵌入-学习笔记/</id>
+    <published>2017-06-04T15:43:11.000Z</published>
+    <updated>2017-06-04T15:44:50.926Z</updated>
+    
+    <content type="html"><![CDATA[<p>简单来说，词嵌入就是把一个词表示成一个（稠密）向量。词转向量的自然方式是使用one-hot形式，但是这种形式的问题在于每个词向量尺寸很大，极其稀疏；同时两个词之间的关系完全无法捕捉。使用词嵌入（word embedding）之后，相近的词在特征空间上的距离就更近。</p>
+<p>one-hot转词嵌入需要一个词嵌入字典，将词的one-hot向量乘以这个字典就得到了词嵌入向量（所以这里或许可以优化？）。可以看到这相当于是计算了一层隐藏层的activation。词嵌入字典的得到是一个训练任务的”副产品“，词嵌入字典就相当于是网络结构中的一层隐藏层的权值。</p>
+<p>词嵌入的做法有很多，不过google的word2vec是当前最流行的，tensorflow中有相关教程。其算法简单来说，就是在输入的连续句子语料中，以一个窗口截取每段话，将这段话中间的词替换为若干个其他词，让网络估计中间的词是原词的概率是多少，是其他词（噪音）的概率是多少，要求前者尽可能低，后者尽可能高。比如</p>
+<p>the quick brown fox jumped over the lazy dog</p>
+<p>这段话，使用尺寸为1的窗口，那么就会成为如下的样本集：<br>([the, brown], quick), ([quick, fox], brown), ([brown, jumped], fox), …<br>词嵌入模型可以正向来（从context猜target），也可以反向来（从target猜context）。skip-gram模型就是反向来（好处是？），于是数据集变成了：<br>(quick, the), (quick, brown), (brown, quick), (brown, fox), …<br>然后便可以进行计算。计算时对于每个样本，要随机采样若干个噪音样本，计算网络对于正确词和噪音词的概率预测，然后使用noise-contrastive estimation (NCE)损失函数（就是把所有结果的交叉熵代价函数相加）作为代价函数，进行训练，最后取出字典。</p>
+<p> 在实际使用中,词嵌入可能不仅仅用于nlp.在推荐等场合,”词”嵌入的第一维可能非常大,以致于在单机中无法存放.所幸的是我们在计算中不需要用到全部词向量,因此,可以把embedding字典分布式存储起来,仅在计算时取对应的向量,计算完成后将梯度信息再送回分布式服务器进行更新.</p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;简单来说，词嵌入就是把一个词表示成一个（稠密）向量。词转向量的自然方式是使用one-hot形式，但是这种形式的问题在于每个词向量尺寸很大，极其稀疏；同时两个词之间的关系完全无法捕捉。使用词嵌入（word embedding）之后，相近的词在特征空间上的距离就更近。&lt;/p&gt;
+
+    
+    </summary>
+    
+      <category term="深度学习与智能" scheme="http://yoursite.com/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%8E%E6%99%BA%E8%83%BD/"/>
+    
+    
+      <category term="nlp" scheme="http://yoursite.com/tags/nlp/"/>
+    
+      <category term="embedding" scheme="http://yoursite.com/tags/embedding/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>tensorflow Word2Vec教程代码解读</title>
+    <link href="http://yoursite.com/2017/06/04/tensorflow-Word2Vec%E6%95%99%E7%A8%8B%E4%BB%A3%E7%A0%81%E8%A7%A3%E8%AF%BB/"/>
+    <id>http://yoursite.com/2017/06/04/tensorflow-Word2Vec教程代码解读/</id>
+    <published>2017-06-04T15:28:28.000Z</published>
+    <updated>2017-06-04T15:33:48.330Z</updated>
+    
+    <content type="html"><![CDATA[<p>本文主要解读tensorflow在<a href="https://github.com/tensorflow/models/tree/master/tutorials/embedding" target="_blank" rel="external">这个教程</a>中的词嵌入(embedding)模块代码.</p>
+<h3 id="代码解读"><a href="#代码解读" class="headerlink" title="代码解读"></a>代码解读</h3><ul>
+<li>教程中的<code>word2vec.py</code>是主要的词嵌入模块.<code>word2vec_optimized.py</code>是其优化版本,主要是将代价函数部分用C++实现了,提高了训练效率.这两个版本的模块都使用了C++实现的自定义读取操作,需要在运行前先编译出该操作的so库.</li>
+<li>代码强制指定了各项计算都使用CPU,这是有道理的,见文末的讨论.</li>
+<li>解读以 <code>word2vec.py</code> 为主。</li>
+</ul>
+<h4 id="overview"><a href="#overview" class="headerlink" title="overview"></a>overview</h4><ul>
+<li>使用<code>tf.app</code>来运行整个模块，以便使用<code>tf.app.flag</code>来接收和管理传入的参数。</li>
+<li>接收的训练数据是连续的句子语料文本。使用C++自定义文本处理操作(也就是op),负责将连续的句子转换为符合skip模型的样本.</li>
+<li><code>Class Options</code>用来管理配置和参数.</li>
+<li><code>Class Word2Vec</code>是主体，包含主要逻辑。</li>
+<li>使用<code>thread</code>库来进行多线程训练.</li>
+</ul>
+<h4 id="训练"><a href="#训练" class="headerlink" title="训练"></a>训练</h4><h5 id="forward-self-examples-labels"><a href="#forward-self-examples-labels" class="headerlink" title="forward(self, examples, labels)"></a>forward(self, examples, labels)</h5><p>这个函数建立前向网络。输入的<code>examples</code>和<code>labels</code>分别是一个batch的训练样本和标签的tensor占位符,由预处理操作提供.函数返回输入给激活函数的logits.<br>首先初始化各权值矩阵.<code>emb</code>是我们需要的词嵌入字典,尺寸是<code>单词数</code> * <code>emb_dim</code>，然后逻辑回归网络仅有一层,其权值矩阵是<code>sm_w_t</code>(‘t’表示转置)和<code>sm_b</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Declare all variables we need.</span></div><div class="line">   <span class="comment"># Embedding: [vocab_size, emb_dim]</span></div><div class="line">   init_width = <span class="number">0.5</span> / opts.emb_dim</div><div class="line">   emb = tf.Variable(</div><div class="line">       tf.random_uniform(</div><div class="line">           [opts.vocab_size, opts.emb_dim], -init_width, init_width),</div><div class="line">       name=<span class="string">"emb"</span>)</div><div class="line">   self._emb = emb</div><div class="line"></div><div class="line">   <span class="comment"># Softmax weight: [vocab_size, emb_dim]. Transposed.</span></div><div class="line">   sm_w_t = tf.Variable(</div><div class="line">       tf.zeros([opts.vocab_size, opts.emb_dim]),</div><div class="line">       name=<span class="string">"sm_w_t"</span>)</div><div class="line"></div><div class="line">   <span class="comment"># Softmax bias: [emb_dim].</span></div><div class="line">   sm_b = tf.Variable(tf.zeros([opts.vocab_size]), name=<span class="string">"sm_b"</span>)</div></pre></td></tr></table></figure>
+<p>注意这里<code>sm_w_t</code>是输出层权值矩阵.由于我们要输出的label数量等于单词表中单词的数量,所以这里矩阵的维度恰好是<code>单词数</code> * <code>emb_dim</code>,恰好与embedding矩阵的尺寸相同.<br>第一步是进行噪声采样，就是从所有词中随机选出若干词作为噪声。使用了<code>tf.nn.fixed_unigram_candidate_sampler</code>采样函数<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Nodes to compute the nce loss w/ candidate sampling.</span></div><div class="line">labels_matrix = tf.reshape(</div><div class="line">    tf.cast(labels,</div><div class="line">            dtype=tf.int64),</div><div class="line">    [opts.batch_size, <span class="number">1</span>])</div><div class="line"></div><div class="line"><span class="comment"># Negative sampling.</span></div><div class="line">sampled_ids, _, _ = (tf.nn.fixed_unigram_candidate_sampler(</div><div class="line">    true_classes=labels_matrix,</div><div class="line">    num_true=<span class="number">1</span>,</div><div class="line">    num_sampled=opts.num_samples,</div><div class="line">    unique=<span class="keyword">True</span>,</div><div class="line">    range_max=opts.vocab_size,</div><div class="line">    distortion=<span class="number">0.75</span>,</div><div class="line">    unigrams=opts.vocab_counts.tolist()))</div></pre></td></tr></table></figure></p>
+<p>然后，使用<code>tf.nn.embedding_lookup</code>函数从权值矩阵中选出对应的权值组成小的权值矩阵。这一步实际上是等效于以one-hot形式的输入数据乘以2层隐藏层1层输出层的权值矩阵。由于one-hot形式非常稀疏，我们仅选出第一层中对应的权值（其他权值在计算中都归零了）；同时由于我们仅关心真实词和采样噪声词的预测结果，所以仅选出第二层(输出层)中的对应权值：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># Embeddings for examples: [batch_size, emb_dim]</span></div><div class="line">example_emb = tf.nn.embedding_lookup(emb, examples)</div><div class="line"></div><div class="line"><span class="comment"># Weights for labels: [batch_size, emb_dim]</span></div><div class="line">true_w = tf.nn.embedding_lookup(sm_w_t, labels)</div><div class="line"><span class="comment"># Biases for labels: [batch_size, 1]</span></div><div class="line">true_b = tf.nn.embedding_lookup(sm_b, labels)</div><div class="line"></div><div class="line"><span class="comment"># Weights for sampled ids: [num_sampled, emb_dim]</span></div><div class="line">sampled_w = tf.nn.embedding_lookup(sm_w_t, sampled_ids)</div><div class="line"><span class="comment"># Biases for sampled ids: [num_sampled, 1]</span></div><div class="line">sampled_b = tf.nn.embedding_lookup(sm_b, sampled_ids)</div></pre></td></tr></table></figure></p>
+<p>计算并返回logit：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># True logits: [batch_size, 1]</span></div><div class="line">true_logits = tf.reduce_sum(tf.multiply(example_emb, true_w), <span class="number">1</span>) + true_b</div><div class="line"></div><div class="line"><span class="comment"># Sampled logits: [batch_size, num_sampled]</span></div><div class="line"><span class="comment"># We replicate sampled noise labels for all examples in the batch</span></div><div class="line"><span class="comment"># using the matmul.</span></div><div class="line">sampled_b_vec = tf.reshape(sampled_b, [opts.num_samples])</div><div class="line">sampled_logits = tf.matmul(example_emb,</div><div class="line">                           sampled_w,</div><div class="line">                           transpose_b=<span class="keyword">True</span>) + sampled_b_vec</div><div class="line"><span class="keyword">return</span> true_logits, sampled_logits</div></pre></td></tr></table></figure></p>
+<p>这里有个细节.注意到对于一个batch的样本而言,正确的词(标签)每个样本对应一个,一共有batch个,计算时对于每个样本而言是两个向量相乘(使用<code>tf.multiply</code>)再加上偏置.而对于抽到的负样本而言,一个batch的样本都使用同样的simple_num个干扰样本,对于每个样本的计算都是一个向量(样本的词向量)乘以一个矩阵(simple_num个噪声样本对应的权值向量拼接起来),使用<code>tf.matmul</code>.所以可以看到计算方式是不同的.</p>
+<h5 id="nce-loss-self-true-logits-sampled-logits"><a href="#nce-loss-self-true-logits-sampled-logits" class="headerlink" title="nce_loss(self, true_logits, sampled_logits)"></a>nce_loss(self, true_logits, sampled_logits)</h5><p>训练中实际用到的代价函数.NCE代价函数简单来说就是把标签词的交叉熵与干扰词的交叉熵相加得到的结果.我们指定标签词应该得到1,干扰词应该得到0,这样当标签词的activation越接近1,交叉熵就越小;当干扰词的activation越接近0,其交叉熵也越小.求两者相加的NCE代价越小,就等价于使模型结果尽量倾向于标签词而远离干扰词.<br>代码首先使用<code>tf.nn.sigmoid_cross_entropy_with_logits</code>函数计算标签词和干扰词的交叉熵.该函数的<code>labels</code>参数是一个维度与输入<code>logits</code>相同的tensor,指定了对应位置上的logit应该被判断为1还是0：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># cross-entropy(logits, labels)</span></div><div class="line">opts = self._options</div><div class="line">true_xent = tf.nn.sigmoid_cross_entropy_with_logits(</div><div class="line">    labels=tf.ones_like(true_logits), logits=true_logits)</div><div class="line">sampled_xent = tf.nn.sigmoid_cross_entropy_with_logits(</div><div class="line">    labels=tf.zeros_like(sampled_logits), logits=sampled_logits)</div></pre></td></tr></table></figure></p>
+<p>然后,将标签词的交叉熵与噪音词的交叉熵相加,并且在<code>batch_size</code>上做平均,就得到了NCE:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"></div><div class="line"><span class="comment"># NCE-loss is the sum of the true and noise (sampled words)</span></div><div class="line"><span class="comment"># contributions, averaged over the batch.</span></div><div class="line">nce_loss_tensor = (tf.reduce_sum(true_xent) +</div><div class="line">                   tf.reduce_sum(sampled_xent)) / opts.batch_size</div><div class="line"><span class="keyword">return</span> nce_loss_tensor</div></pre></td></tr></table></figure>
+<h5 id="build-graph-self"><a href="#build-graph-self" class="headerlink" title="build_graph(self)"></a>build_graph(self)</h5><p>建立训练网络.通过组合前向网络和优化器,得到最终的训练tensor.<br>首先,通过C++自定义的<code>word2vec.skipgram_word2vec</code>操作得到输入数据的tensor,这些样本将符合skipgram模型.关于skipgram模型的原理这里不再介绍,符合该模型的输入样本是一个词(id),其对应的标签也是一个词(id).每个样本表示出现该词时,其上下文(一个指定的窗口范围内)有可能出现如标签所标记的词.<br>这个操作将返回若干统计量和包含输入数据以及标签的占位符.这些返回参数都是tensor,需要通过<code>session.run</code>才能获取到结果值.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div></pre></td><td class="code"><pre><div class="line"><span class="comment"># The training data. A text file.</span></div><div class="line">    <span class="comment">#处理数据读取过程.把文本按照skip模型的方式分割成一个个样本</span></div><div class="line">    <span class="comment">#这里返回的参数都是placeholder,需要通过session.run才能填充实际数据</span></div><div class="line">    <span class="comment">#word:包含所有单词的向量</span></div><div class="line">    <span class="comment">#counts:每个单词在语料中出现的频数</span></div><div class="line">    <span class="comment">#words_per_epoch:每个epoch中包含的单词数目</span></div><div class="line">    <span class="comment">#self._epoch:当前epoch序号</span></div><div class="line">    <span class="comment">#self._words:当前已处理单词数</span></div><div class="line">    <span class="comment">#examples:样本词id(一个batch大小)</span></div><div class="line">    <span class="comment">#labels:标签词id(一个batch大小)</span></div><div class="line">    (words, counts, words_per_epoch, self._epoch, self._words, examples,</div><div class="line">     labels) = word2vec.skipgram_word2vec(filename=opts.train_data,</div><div class="line">                                          batch_size=opts.batch_size,</div><div class="line">                                          window_size=opts.window_size,</div><div class="line">                                          min_count=opts.min_count,</div><div class="line">                                          subsample=opts.subsample)</div><div class="line">    <span class="comment">#获取单词表和频数统计</span></div><div class="line">    (opts.vocab_words, opts.vocab_counts,</div><div class="line">     opts.words_per_epoch) = self._session.run([words, counts, words_per_epoch])</div><div class="line">    opts.vocab_size = len(opts.vocab_words)</div><div class="line">    print(<span class="string">"Data file: "</span>, opts.train_data)</div><div class="line">    print(<span class="string">"Vocab size: "</span>, opts.vocab_size - <span class="number">1</span>, <span class="string">" + UNK"</span>)</div><div class="line">    print(<span class="string">"Words per epoch: "</span>, opts.words_per_epoch)</div><div class="line">    self._examples = examples</div><div class="line">    self._labels = labels</div><div class="line">    self._id2word = opts.vocab_words</div><div class="line">    <span class="comment">#反向查询表</span></div><div class="line">    <span class="keyword">for</span> i, w <span class="keyword">in</span> enumerate(self._id2word):</div><div class="line">      self._word2id[w] = i</div></pre></td></tr></table></figure>
+<p>完成对语料的预处理后,将前向过程和代价函数组合起来,使用优化器自动进行反向过程.最后定义了一个记录所有tensor状态的<code>saver</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="comment">#前向计算标签和干扰项的logits</span></div><div class="line">true_logits, sampled_logits = self.forward(examples, labels)</div><div class="line"><span class="comment">#根据上述logits计算nce</span></div><div class="line">loss = self.nce_loss(true_logits, sampled_logits)</div><div class="line">tf.summary.scalar(<span class="string">"NCE loss"</span>, loss)</div><div class="line">self._loss = loss</div><div class="line"><span class="comment">#修正权重</span></div><div class="line">self.optimize(loss)</div><div class="line"></div><div class="line"><span class="comment"># Properly initialize all variables.</span></div><div class="line">tf.global_variables_initializer().run()</div><div class="line"></div><div class="line">self.saver = tf.train.Saver()</div></pre></td></tr></table></figure>
+<h5 id="train-self"><a href="#train-self" class="headerlink" title="train(self)"></a>train(self)</h5><p>实际执行训练过程.这里使用了<code>thread</code>模块来进行多线程训练.代码仅进行了一次epoch就停机了,实际使用时增加epoch数目也许可以获得更好的结果.<br>真正执行训练的代码在子线程函数中:<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">_train_thread_body</span><span class="params">(self)</span>:</span></div><div class="line">    <span class="comment">#获取当前epoch序号</span></div><div class="line">    initial_epoch, = self._session.run([self._epoch])</div><div class="line">    <span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">      <span class="comment">#每次执行都是执行一个batch.当处理完一次epoch的单词之后,就退出这个线程</span></div><div class="line">      _, epoch = self._session.run([self._train, self._epoch])</div><div class="line">      <span class="keyword">if</span> epoch != initial_epoch:</div><div class="line">        <span class="keyword">break</span></div></pre></td></tr></table></figure></p>
+<p>这个函数首先run一次<code>epoch</code>tensor获取当前处理的epoch.之后通过<code>session.run</code>计算<code>train</code>tensor,这就进行了前向和反向操作,同时也获取了新的<code>epoch</code>值.当这个值与初始epoch序号不同时,就终止了训练.<br>这个子线程通过<code>thread</code>库进行了调用:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">workers = []</div><div class="line"><span class="keyword">for</span> _ <span class="keyword">in</span> xrange(opts.concurrent_steps):</div><div class="line">  t = threading.Thread(target=self._train_thread_body)</div><div class="line">  t.start()</div><div class="line">  workers.append(t)</div></pre></td></tr></table></figure>
+<p>训练线程启动之后,代码进入了一个循环,将不断run那些统计tensor以打印当前的状态,并定时保存checkpoint.在<code>epoch</code>的值增加之后(跑完了一遍epoch)就等待各线程结束:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="comment">#进行循环统计信息</span></div><div class="line"><span class="keyword">while</span> <span class="keyword">True</span>:</div><div class="line">  time.sleep(opts.statistics_interval)  <span class="comment"># Reports our progress once a while.</span></div><div class="line">  <span class="comment">#算一次前向过程以提供统计数据</span></div><div class="line">  (epoch, step, loss, words, lr) = self._session.run(</div><div class="line">      [self._epoch, self.global_step, self._loss, self._words, self._lr])</div><div class="line">  now = time.time()</div><div class="line">  <span class="comment">#计算相关统计参数并打印</span></div><div class="line">  last_words, last_time, rate = words, now, (words - last_words) / (</div><div class="line">      now - last_time)</div><div class="line">  print(<span class="string">"Epoch %4d Step %8d: lr = %5.3f loss = %6.2f words/sec = %8.0f\r"</span> %</div><div class="line">        (epoch, step, lr, loss, rate), end=<span class="string">""</span>)</div><div class="line">  sys.stdout.flush()</div><div class="line">  <span class="comment">#记录信息</span></div><div class="line">  <span class="keyword">if</span> now - last_summary_time &gt; opts.summary_interval:</div><div class="line">    summary_str = self._session.run(summary_op)</div><div class="line">    summary_writer.add_summary(summary_str, step)</div><div class="line">    last_summary_time = now</div><div class="line">  <span class="comment">#保存checkpoint</span></div><div class="line">  <span class="keyword">if</span> now - last_checkpoint_time &gt; opts.checkpoint_interval:</div><div class="line">    self.saver.save(self._session,</div><div class="line">                    os.path.join(opts.save_path, <span class="string">"model.ckpt"</span>),</div><div class="line">                    global_step=step.astype(int))</div><div class="line">    last_checkpoint_time = now</div><div class="line">  <span class="comment">#处理完整一个epoch之后就退出统计,并且等待各计算线程工作完毕</span></div><div class="line">  <span class="keyword">if</span> epoch != initial_epoch:</div><div class="line">    <span class="keyword">break</span></div></pre></td></tr></table></figure>
+<h3 id="一些问题"><a href="#一些问题" class="headerlink" title="一些问题"></a>一些问题</h3><ul>
+<li>在我的机器上，默认代码虽然占用了gpu显存但是并不会真正利用gpu。强行修改代码利用gpu的话，速度比cpu还慢。待解决。</li>
+<li>目前看来，代码使用cpu(默认)就是比gpu快速。打印tensor分配日志可以看到部分op被分配到了cpu上。实际上，自定义实现的op都没有gpu版本，这包括了数据IO操作，和optimized版本代码中的损失函数操作。由于embedding可能很大，所以这个矩阵不应该被分配到gpu上；同时，embedding lookup和embedding update都不会被分配到gpu上。</li>
+<li>目前观察到现象是，无论是<code>word2vec.py</code>还是<code>word2vec_optimized.py</code>，都是指定分配任务到cpu上的性能更好，而如果不强制指定cpu，那么<code>word2vec_optimized.py</code>性能没有太大变化，而<code>word2vec.py</code>性能严重下降。两者的差异在于，<code>word2vec_optimized.py</code>自行实现了nce损失函数的op（没有gpu代码）。推测出现性能差异的原因是，<code>word2vec.py</code>的 embedding update 操作在cpu上而损失函数（以及隐藏层更新）在gpu上，这种操作带来了严重的通信开销；而<code>word2vec_optimized.py</code>的损失函数也在cpu上（因为自定义op没有实现gpu版本），所以损失不大。也可以指定仅将matmul操作分配到gpu上，实测性能好于让机器自行分配，但是仍然比指定全cpu性能差。</li>
+<li>由此可以得出，word embeding最好在cpu上做。</li>
+</ul>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;p&gt;本文主要解读tensorflow在&lt;a href=&quot;https://github.com/tensorflow/models/tree/master/tutorials/embedding&quot; target=&quot;_blank&quot; rel=&quot;external&quot;&gt;这个教程&lt;/a&gt;中的
+    
+    </summary>
+    
+      <category term="深度学习与智能" scheme="http://yoursite.com/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%8E%E6%99%BA%E8%83%BD/"/>
+    
+    
+      <category term="nlp" scheme="http://yoursite.com/tags/nlp/"/>
+    
+      <category term="embedding" scheme="http://yoursite.com/tags/embedding/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>深度学习在文本分类中的应用</title>
+    <link href="http://yoursite.com/2017/05/23/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%9C%A8%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/"/>
+    <id>http://yoursite.com/2017/05/23/深度学习在文本分类中的应用/</id>
+    <published>2017-05-22T16:58:58.000Z</published>
+    <updated>2017-05-22T17:19:00.697Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="仅使用CNN的结构"><a href="#仅使用CNN的结构" class="headerlink" title="仅使用CNN的结构"></a>仅使用CNN的结构</h4><img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-文本分类.png" alt="-cnn-文本分类.png" title="">
+<ul>
+<li>相比于传统CNN,在解决nlp问题时,每个filter的宽都等于每个单词的宽度.</li>
+<li>输入数据有两个channel,其中一个是静态的embedding,另一个是动态的embedding.静态embedding是事先训练好的,在此次训练中不再变化;动态embedding会在训练过程中也进行参数求解.</li>
+<li>仅使用静态embedding的话可能因为embedding训练数据集与实际数据集有偏差而导致不准确;仅用动态数据集的话其初始化会对训练有影响.</li>
+</ul>
+<h4 id="CNN与RNN混合使用"><a href="#CNN与RNN混合使用" class="headerlink" title="CNN与RNN混合使用"></a>CNN与RNN混合使用</h4><h5 id="首先分别看CNN与RNN获取文本向量的方法"><a href="#首先分别看CNN与RNN获取文本向量的方法" class="headerlink" title="首先分别看CNN与RNN获取文本向量的方法:"></a>首先分别看CNN与RNN获取文本向量的方法:</h5><img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-rnn-文本分类.png" alt="-cnn-rnn-文本分类.png" title="">
+<img src="/2017/05/23/深度学习在文本分类中的应用/-cnn-rnn-文本分类2.png" alt="-cnn-rnn-文本分类2.png" title="">
+<h5 id="然后看CNN与RNN混合使用的方法"><a href="#然后看CNN与RNN混合使用的方法" class="headerlink" title="然后看CNN与RNN混合使用的方法:"></a>然后看CNN与RNN混合使用的方法:</h5>
+<ul>
+<li>简单来说,第一步使用CNN将句子各个局部进行计算得到n个向量(n是filter数目),这些向量每个元素之间的顺序正好与输入句子中单词的顺序对应.</li>
+<li>之后把各个向量同一时间的元素取出来组成新向量,这样每个向量内部各个元素都对应同一时间点的单词,而向量之间对应句子中单词的顺序关系;</li>
+<li>此时把新组建的向量当做输入向量序列,放入LSTM中进行训练.</li>
+</ul>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a href="https://app.yinxiang.com/shard/s5/nl/416164/a419d8fc-79e6-4566-851f-b66a0dc86b35?title=%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%9C%A8%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8%20-%20luchi007%E7%9A%84%E4%B8%93%E6%A0%8F%20-%20%E5%8D%9A%E5%AE%A2%E9%A2%91%E9%81%93%20-%20CSDN.NET" target="_blank" rel="external">深度学习在文本分类中的应用-博客</a></p>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h4 id=&quot;仅使用CNN的结构&quot;&gt;&lt;a href=&quot;#仅使用CNN的结构&quot; class=&quot;headerlink&quot; title=&quot;仅使用CNN的结构&quot;&gt;&lt;/a&gt;仅使用CNN的结构&lt;/h4&gt;&lt;img src=&quot;/2017/05/23/深度学习在文本分类中的应用/-cnn-文本分类
+    
+    </summary>
+    
+      <category term="深度学习与智能" scheme="http://yoursite.com/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%8E%E6%99%BA%E8%83%BD/"/>
+    
+    
+      <category term="深度学习" scheme="http://yoursite.com/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"/>
+    
+      <category term="文本分类" scheme="http://yoursite.com/tags/%E6%96%87%E6%9C%AC%E5%88%86%E7%B1%BB/"/>
+    
+  </entry>
+  
+</feed>
